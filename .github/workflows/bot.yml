@@ -25,7 +25,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: seen_jobs.json
-          key: blue-bunny-jobs-${{ github.run_id }}
+          key:  blue-bunny-jobs-memory
           restore-keys: |
             blue-bunny-jobs-
 
