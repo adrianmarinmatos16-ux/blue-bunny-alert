@@ -1,19 +1,26 @@
 import os
+import json
 import requests
 from bs4 import BeautifulSoup
 
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = "8283345025"
 
-URL = "https://wellsenterprisesinc.com/careers"
+JOBS_URL = "https://www.indeed.com/cmp/Wells-Enterprises%2C-Inc.-1/locations/IA/Le%20Mars"
+
+SEEN_FILE = "seen_jobs.json"
 
 KEYWORDS = [
     "production",
     "operator",
+    "machine operator",
     "manufacturing",
     "packaging",
-    "operations"
+    "operations",
+    "freezer operator",
+    "production worker"
 ]
+
 
 def send_message(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -22,8 +29,7 @@ def send_message(text):
         url,
         data={
             "chat_id": CHAT_ID,
-            "text": text,
-            "disable_web_page_preview": False
+            "text": text
         },
         timeout=30
     )
@@ -31,9 +37,22 @@ def send_message(text):
     response.raise_for_status()
 
 
+def load_seen():
+    if not os.path.exists(SEEN_FILE):
+        return set()
+
+    with open(SEEN_FILE, "r", encoding="utf-8") as file:
+        return set(json.load(file))
+
+
+def save_seen(seen):
+    with open(SEEN_FILE, "w", encoding="utf-8") as file:
+        json.dump(list(seen), file, indent=2)
+
+
 def get_jobs():
     response = requests.get(
-        URL,
+        JOBS_URL,
         headers={
             "User-Agent": "Mozilla/5.0"
         },
@@ -47,6 +66,7 @@ def get_jobs():
     jobs = []
 
     for link in soup.find_all("a", href=True):
+
         title = link.get_text(" ", strip=True)
 
         if not title:
@@ -55,27 +75,53 @@ def get_jobs():
         title_lower = title.lower()
 
         if any(keyword in title_lower for keyword in KEYWORDS):
+
             href = link["href"]
 
             if href.startswith("/"):
-                href = "https://wellsenterprisesinc.com" + href
+                href = "https://www.indeed.com" + href
 
-            jobs.append((title, href))
+            jobs.append({
+                "title": title,
+                "url": href
+            })
 
     return jobs
 
 
-jobs = get_jobs()
+def main():
 
-if jobs:
-    message = "🚨 POSIBLES EMPLEOS NUEVOS EN WELLS / BLUE BUNNY\n\n"
+    seen = load_seen()
+    jobs = get_jobs()
 
-    for title, link in jobs[:10]:
-        message += f"🔹 {title}\n{link}\n\n"
+    new_jobs = []
 
-    send_message(message)
-else:
-    send_message(
-        "🔎 Revisé Wells/Blue Bunny y no encontré "
-        "puestos de producción visibles en esta revisión."
-    )
+    for job in jobs:
+
+        job_id = job["title"] + "|" + job["url"]
+
+        if job_id not in seen:
+
+            seen.add(job_id)
+            new_jobs.append(job)
+
+    save_seen(seen)
+
+    if not new_jobs:
+        print("No hay ofertas nuevas.")
+        return
+
+    for job in new_jobs:
+
+        message = (
+            "🚨 NUEVA OFERTA DE WELLS / BLUE BUNNY\n\n"
+            f"🏭 {job['title']}\n"
+            "📍 Le Mars, Iowa\n\n"
+            f"🔗 {job['url']}"
+        )
+
+        send_message(message)
+
+
+if __name__ == "__main__":
+    main()
