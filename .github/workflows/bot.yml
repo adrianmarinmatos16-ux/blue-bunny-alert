@@ -21,7 +21,22 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests beautifulsoup4
 
+      - name: Restaurar memoria
+        uses: actions/cache@v4
+        with:
+          path: seen_jobs.json
+          key: blue-bunny-jobs-${{ github.run_id }}
+          restore-keys: |
+            blue-bunny-jobs-
+
       - name: Ejecutar bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: python bot.py
+
+      - name: Guardar memoria
+        uses: actions/upload-artifact@v4
+        with:
+          name: seen-jobs
+          path: seen_jobs.json
+          overwrite: true
