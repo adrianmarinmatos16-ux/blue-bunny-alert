@@ -93,7 +93,7 @@ def main():
 
     seen = load_seen()
     jobs = get_jobs()
-
+    print(f"Ofertas encontradas: {len(jobs)}")
     new_jobs = []
 
     for job in jobs:
