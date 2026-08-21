@@ -18,8 +18,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name:  Instalar dependencias
-        run:pip install requests beautifulsoup4
+      - name: Instalar dependencias
+        run: pip install requests beautifulsoup4
 
       - name: Ejecutar bot
         env:
