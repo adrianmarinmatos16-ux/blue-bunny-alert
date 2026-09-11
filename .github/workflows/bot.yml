@@ -2,8 +2,7 @@ name: Blue Bunny Job Alert
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/15 * * * *"
+  
 
 jobs:
   check:
